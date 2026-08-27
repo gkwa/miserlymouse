@@ -64,6 +64,12 @@ def build_common() -> argparse.ArgumentParser:
         help="print a JSON record of the schedule to stdout",
     )
     common.add_argument(
+        "--no-progress",
+        action="store_true",
+        default=hidden,
+        help="never draw the progress bar",
+    )
+    common.add_argument(
         "--dry-run",
         action="store_true",
         default=hidden,

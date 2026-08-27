@@ -19,6 +19,15 @@ def json_stream(utility: typing.Sequence[str], dry_run: bool) -> typing.TextIO:
     return sys.stdout
 
 
+def wants_progress(options: argparse.Namespace, utility: typing.Sequence[str]) -> bool:
+    """A wrapped command owns the terminal, and a pipe has nobody watching."""
+    if getattr(options, "no_progress", False):
+        return False
+    if utility:
+        return False
+    return sys.stderr.isatty()
+
+
 def resolve_seconds(
     options: argparse.Namespace, now: datetime.datetime
 ) -> tuple[str, int]:
@@ -74,4 +83,6 @@ def main(argv: typing.Sequence[str] | None = None) -> int:
         print(str(error), file=sys.stderr)
         return 1
 
-    miserlymouse.runner.run(command)
+    return miserlymouse.runner.supervise(
+        command, seconds, wants_progress(options, utility)
+    )

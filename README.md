@@ -4,9 +4,11 @@ Runs caffeinate for a human-readable duration, or until the next time a clock re
 
 `caffeinate -t 7200` becomes `miserlymouse 2h`.
 
-Execs caffeinate rather than spawning it, so Ctrl-C and the exit code behave exactly as running caffeinate directly.
+Supervises caffeinate as a child, exits with its status, and draws a progress bar while it waits.
 
-Prints nothing on the happy path.
+Ctrl-C stops caffeinate and exits 130, leaving nothing running.
+
+Apart from the progress bar, which erases itself, it prints nothing on the happy path.
 
 ## Modes
 
@@ -80,6 +82,9 @@ uv tool run --from git+https://github.com/gkwa/miserlymouse miserlymouse 30m mak
 # flags after the duration go to the wrapped command, not to miserlymouse
 uv tool run --from git+https://github.com/gkwa/miserlymouse miserlymouse 30m make --jobs 4
 
+# stay awake for two hours with no progress bar
+uv tool run --from git+https://github.com/gkwa/miserlymouse miserlymouse --no-progress 2h
+
 # print the caffeinate command without running it
 uv tool run --from git+https://github.com/gkwa/miserlymouse miserlymouse --dry-run 1h24m
 
@@ -104,6 +109,14 @@ uv tool install git+https://github.com/gkwa/miserlymouse
 # run the tests, which need a local checkout
 uv run --no-active --project /Users/mtm/pdev/taylormonacelli/miserlymouse --directory /Users/mtm/pdev/taylormonacelli/miserlymouse pytest -q
 ```
+
+## Progress bar
+
+The bar is drawn on stderr and erased when caffeinate exits, so it leaves no trace in a log or a pipeline.
+
+It appears only when stderr is a terminal and no command is being wrapped, since a wrapped command owns the terminal and a pipe has nobody watching.
+
+`--no-progress` turns it off outright.
 
 ## JSON record
 
