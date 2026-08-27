@@ -1,0 +1,30 @@
+[project]
+name = "miserlymouse"
+version = "0.1.0"
+description = "Run caffeinate with a human duration like 1h24m instead of raw seconds"
+readme = "README.md"
+authors = [
+    { name = "Taylor Monacelli", email = "taylormonacelli@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+miserlymouse = "miserlymouse:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+preview = true
+
+[tool.ruff.lint]
+select = ["F", "E", "W"]
+extend-select = ["I"]
+extend-safe-fixes = ["F401", "F841"]
