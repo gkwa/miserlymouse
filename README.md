@@ -1,8 +1,12 @@
 # miserlymouse
 
-Run caffeinate for a human-readable duration instead of a raw second count.
+Runs caffeinate for a human-readable duration instead of a raw second count.
 
 `caffeinate -t 7200` becomes `miserlymouse 2h`.
+
+Execs caffeinate rather than spawning it, so Ctrl-C and the exit code behave exactly as running caffeinate directly.
+
+Prints nothing on the happy path.
 
 ## Durations
 
@@ -12,103 +16,51 @@ Run caffeinate for a human-readable duration instead of a raw second count.
 - `1h 24m`
 - `1h30m10s`
 - `1.5h`
+- `.5h`
 - `90s`
 - `1d`
 - `1w`
-- `1:24` for one hour twenty-four minutes
-- `1:24:30` for hours, minutes, seconds
+- `1:24` meaning one hour twenty-four minutes
+- `1:24:30` meaning hours, minutes, seconds
 - `7200` bare, meaning seconds
 
-## Cheatsheet
-
-Keep the machine awake for two hours:
-
 ```sh
+# stay awake for two hours
 uv run --no-active --project /Users/mtm/pdev/taylormonacelli/miserlymouse miserlymouse 2h
-```
 
-See the caffeinate command without running it:
+# stay awake for a compound duration
+uv run --no-active --project /Users/mtm/pdev/taylormonacelli/miserlymouse miserlymouse 1h24m
 
-```sh
+# stay awake for thirty minutes
+uv run --no-active --project /Users/mtm/pdev/taylormonacelli/miserlymouse miserlymouse 30m
+
+# keep the display awake too, not just the system
+uv run --no-active --project /Users/mtm/pdev/taylormonacelli/miserlymouse miserlymouse --display 2h
+
+# prevent system sleep while on AC power
+uv run --no-active --project /Users/mtm/pdev/taylormonacelli/miserlymouse miserlymouse --system 45m
+
+# combine assertions
+uv run --no-active --project /Users/mtm/pdev/taylormonacelli/miserlymouse miserlymouse --display --system 1h30m
+
+# stay awake while a command runs, then exit with that command's status
+uv run --no-active --project /Users/mtm/pdev/taylormonacelli/miserlymouse miserlymouse 30m make build
+
+# print the caffeinate command without running it
 uv run --no-active --project /Users/mtm/pdev/taylormonacelli/miserlymouse miserlymouse --dry-run 1h24m
-```
 
-```
-caffeinate -t 5040
-```
+# log the exec line to stderr, then run it
+uv run --no-active --project /Users/mtm/pdev/taylormonacelli/miserlymouse miserlymouse --verbose --verbose 2h
 
-Keep the display awake too:
+# show the version
+uv run --no-active --project /Users/mtm/pdev/taylormonacelli/miserlymouse miserlymouse --version
 
-```sh
-uv run --no-active --project /Users/mtm/pdev/taylormonacelli/miserlymouse miserlymouse --dry-run --display 2h
-```
-
-```
-caffeinate -d -t 7200
-```
-
-Stay awake while a command runs:
-
-```sh
-uv run --no-active --project /Users/mtm/pdev/taylormonacelli/miserlymouse miserlymouse --dry-run 30m make build
-```
-
-```
-caffeinate -t 1800 make build
-```
-
-Reject a duration it cannot read:
-
-```sh
-uv run --no-active --project /Users/mtm/pdev/taylormonacelli/miserlymouse miserlymouse 2hours
-```
-
-```
-usage: miserlymouse [-h] [--version] [--display] [--idle] [--disk] [--system]
-                    [--user-active] [--dry-run] [--verbose]
-                    duration ...
-miserlymouse: error: cannot parse duration: '2hours'
-```
-
-Full help:
-
-```sh
+# show all flags and the accepted duration forms
 uv run --no-active --project /Users/mtm/pdev/taylormonacelli/miserlymouse miserlymouse --help
-```
 
-```
-usage: miserlymouse [-h] [--version] [--display] [--idle] [--disk] [--system]
-                    [--user-active] [--dry-run] [--verbose]
-                    duration ...
-
-Run caffeinate for a human-readable duration
-
-positional arguments:
-  duration           how long to stay awake, such as 1h24m
-  utility            optional command to run while awake
-
-options:
-  -h, --help         show this help message and exit
-  --version          show program's version number and exit
-  --display, -d      keep the display awake
-  --idle, -i         prevent idle sleep
-  --disk, -m         prevent disk idle sleep
-  --system, -s       prevent system sleep on AC
-  --user-active, -u  declare the user active
-  --dry-run          print the caffeinate command instead of running it
-  --verbose, -v      raise the log level
-
-durations accept 2h, 30m, 1h24m, 1.5h, 90s, 1d, 1:24, 1:24:30, or bare seconds
-```
-
-## Notes
-
-The tool replaces itself with caffeinate through exec, so Ctrl-C and the exit code behave exactly as they would running caffeinate directly.
-
-It prints nothing on the happy path.
-
-Tests:
-
-```sh
+# run the tests
 uv run --no-active --project /Users/mtm/pdev/taylormonacelli/miserlymouse --directory /Users/mtm/pdev/taylormonacelli/miserlymouse pytest -q
+
+# install it so the bare name is on PATH
+uv tool install /Users/mtm/pdev/taylormonacelli/miserlymouse
 ```
