@@ -1,72 +1,59 @@
 import argparse
-import importlib.metadata
+import datetime
 import shlex
 import sys
 import typing
 
+import miserlymouse.clock
 import miserlymouse.duration
 import miserlymouse.logging_setup
+import miserlymouse.metadata
+import miserlymouse.parser
 import miserlymouse.runner
 
-EPILOG = (
-    """durations accept 2h, 30m, 1h24m, 1.5h, 90s, 1d, 1:24, 1:24:30, or bare seconds"""
-)
 
-
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="miserlymouse",
-        description="Run caffeinate for a human-readable duration",
-        epilog=EPILOG,
-    )
-    parser.add_argument(
-        "--version",
-        action="version",
-        version=f"%(prog)s {importlib.metadata.version('miserlymouse')}",
-    )
-    parser.add_argument(
-        "--display", "-d", action="store_true", help="keep the display awake"
-    )
-    parser.add_argument("--idle", "-i", action="store_true", help="prevent idle sleep")
-    parser.add_argument(
-        "--disk", "-m", action="store_true", help="prevent disk idle sleep"
-    )
-    parser.add_argument(
-        "--system", "-s", action="store_true", help="prevent system sleep on AC"
-    )
-    parser.add_argument(
-        "--user-active", "-u", action="store_true", help="declare the user active"
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="print the caffeinate command instead of running it",
-    )
-    parser.add_argument(
-        "--verbose", "-v", action="count", default=0, help="raise the log level"
-    )
-    parser.add_argument("duration", help="how long to stay awake, such as 1h24m")
-    parser.add_argument(
-        "utility",
-        nargs=argparse.REMAINDER,
-        help="optional command to run while awake",
-    )
-    return parser
+def resolve_seconds(
+    options: argparse.Namespace, now: datetime.datetime
+) -> tuple[str, int]:
+    if options.command == "until":
+        return options.time, miserlymouse.clock.seconds_until(options.time, now)
+    return options.duration, miserlymouse.duration.parse_duration(options.duration)
 
 
 def main(argv: typing.Sequence[str] | None = None) -> int:
-    parser = build_parser()
-    options = parser.parse_args(argv)
-    miserlymouse.logging_setup.configure(options.verbose)
+    parser = miserlymouse.parser.build_parser()
+    tokens = list(sys.argv[1:] if argv is None else argv)
+    options = parser.parse_args(miserlymouse.parser.normalize(tokens))
+    miserlymouse.logging_setup.configure(getattr(options, "verbose", 0))
 
+    now = datetime.datetime.now().astimezone().replace(microsecond=0)
     try:
-        seconds = miserlymouse.duration.parse_duration(options.duration)
-    except miserlymouse.duration.DurationError as error:
+        request, seconds = resolve_seconds(options, now)
+    except (miserlymouse.duration.DurationError, miserlymouse.clock.TimeError) as error:
         parser.error(str(error))
 
-    command = miserlymouse.runner.build_command(seconds, vars(options), options.utility)
-    if options.dry_run:
-        print(shlex.join(command))
+    utility, escaped = miserlymouse.parser.split_utility(options.utility)
+    stray = miserlymouse.parser.stray_option(utility, escaped)
+    if stray is not None:
+        parser.error(
+            f"unrecognized option {stray}, "
+            f"options belong before the {options.command} argument"
+        )
+
+    flags = {
+        name: getattr(options, name, False) for name in miserlymouse.parser.FLAG_NAMES
+    }
+    command = miserlymouse.runner.build_command(seconds, flags, utility)
+
+    if getattr(options, "json", False):
+        record = miserlymouse.metadata.build(
+            options.command, request, seconds, now, command
+        )
+        print(miserlymouse.metadata.render(record))
+
+    if getattr(options, "dry_run", False):
+        if not getattr(options, "json", False):
+            print(shlex.join(command))
         return 0
 
     try:

@@ -55,3 +55,23 @@ def finalize(total: float) -> int:
     if seconds <= 0:
         raise DurationError("duration must be greater than zero")
     return seconds
+
+
+FORMAT_UNITS: tuple[tuple[str, int], ...] = (
+    ("d", 86400),
+    ("h", 3600),
+    ("m", 60),
+    ("s", 1),
+)
+
+
+def format_duration(seconds: int) -> str:
+    if seconds <= 0:
+        return "0s"
+    parts = []
+    remaining = seconds
+    for unit, size in FORMAT_UNITS:
+        value, remaining = divmod(remaining, size)
+        if value:
+            parts.append(f"{value}{unit}")
+    return "".join(parts)

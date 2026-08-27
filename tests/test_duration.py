@@ -49,3 +49,19 @@ def test_parses(text: str, expected: int) -> None:
 def test_rejects(text: str) -> None:
     with pytest.raises(miserlymouse.duration.DurationError):
         miserlymouse.duration.parse_duration(text)
+
+
+@pytest.mark.parametrize(
+    "seconds,expected",
+    [
+        (7200, "2h"),
+        (5040, "1h24m"),
+        (1800, "30m"),
+        (90, "1m30s"),
+        (86400, "1d"),
+        (93784, "1d2h3m4s"),
+        (1, "1s"),
+    ],
+)
+def test_formats(seconds: int, expected: str) -> None:
+    assert miserlymouse.duration.format_duration(seconds) == expected
