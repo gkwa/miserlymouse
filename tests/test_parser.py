@@ -1,5 +1,8 @@
+import sys
+
 import pytest
 
+import miserlymouse.cli
 import miserlymouse.parser
 
 
@@ -78,3 +81,17 @@ def test_without_double_dash_the_guard_fires() -> None:
     utility, escaped = miserlymouse.parser.split_utility(["--weird-binary"])
     assert escaped is False
     assert miserlymouse.parser.stray_option(utility, escaped) == "--weird-binary"
+
+
+@pytest.mark.parametrize(
+    "utility,dry_run,expected",
+    [
+        ([], False, "stdout"),
+        ([], True, "stdout"),
+        (["make"], True, "stdout"),
+        (["make"], False, "stderr"),
+    ],
+)
+def test_json_stream(utility: list[str], dry_run: bool, expected: str) -> None:
+    stream = miserlymouse.cli.json_stream(utility, dry_run)
+    assert stream is getattr(sys, expected)

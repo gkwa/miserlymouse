@@ -12,6 +12,13 @@ import miserlymouse.parser
 import miserlymouse.runner
 
 
+def json_stream(utility: typing.Sequence[str], dry_run: bool) -> typing.TextIO:
+    """Keep the record off stdout only where a wrapped command will claim it."""
+    if utility and not dry_run:
+        return sys.stderr
+    return sys.stdout
+
+
 def resolve_seconds(
     options: argparse.Namespace, now: datetime.datetime
 ) -> tuple[str, int]:
@@ -45,14 +52,19 @@ def main(argv: typing.Sequence[str] | None = None) -> int:
     }
     command = miserlymouse.runner.build_command(seconds, flags, utility)
 
-    if getattr(options, "json", False):
+    wants_json = getattr(options, "json", False)
+    dry_run = getattr(options, "dry_run", False)
+    if wants_json:
         record = miserlymouse.metadata.build(
             options.command, request, seconds, now, command
         )
-        print(miserlymouse.metadata.render(record))
+        print(
+            miserlymouse.metadata.render(record),
+            file=json_stream(utility, dry_run),
+        )
 
-    if getattr(options, "dry_run", False):
-        if not getattr(options, "json", False):
+    if dry_run:
+        if not wants_json:
             print(shlex.join(command))
         return 0
 
