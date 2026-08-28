@@ -13,13 +13,15 @@ def stamp(hour: int, minute: int = 0, day: int = 28) -> datetime.datetime:
 
 class Recorder:
     def __init__(self, explode: bool = False) -> None:
-        self.calls: list[tuple[str, str, str, bool]] = []
+        self.calls: list[tuple[str, str, str, int, str]] = []
         self.explode = explode
 
-    def __call__(self, topic: str, headline: str, text: str, urgent: bool) -> None:
+    def __call__(
+        self, topic: str, headline: str, text: str, priority: int, tag: str
+    ) -> None:
         if self.explode:
             raise urllib.error.URLError("no route to host")
-        self.calls.append((topic, headline, text, urgent))
+        self.calls.append((topic, headline, text, priority, tag))
 
 
 def build(warnings: tuple[int, ...], sender: Recorder) -> miserlymouse.notify.Notifier:
@@ -69,12 +71,40 @@ def test_check_collapses_offsets_missed_in_one_tick() -> None:
     assert sender.calls[0][1] == "Mac sleeps in 5m"
 
 
-def test_the_last_warning_goes_out_urgent() -> None:
+@pytest.mark.parametrize(
+    "remaining,expected",
+    [
+        (0, (5, "rotating_light")),
+        (1, (4, "alarm_clock")),
+        (2, (3, "hourglass_flowing_sand")),
+        (3, (2, "sleeping")),
+        (9, (2, "sleeping")),
+    ],
+)
+def test_stage_escalates_toward_the_end(
+    remaining: int, expected: tuple[int, str]
+) -> None:
+    assert miserlymouse.notify.stage(remaining) == expected
+
+
+def test_the_default_three_escalate_in_priority() -> None:
     sender = Recorder()
-    notifier = build((1800, 300), sender)
-    notifier.check(1800)
+    notifier = build(miserlymouse.notify.DEFAULT_WARNINGS, sender)
+    for remaining in (3600, 1800, 300):
+        notifier.check(remaining)
+    assert [call[3] for call in sender.calls] == [3, 4, 5]
+    assert [call[4] for call in sender.calls] == [
+        "hourglass_flowing_sand",
+        "alarm_clock",
+        "rotating_light",
+    ]
+
+
+def test_a_lone_warning_goes_out_at_the_top_of_the_ladder() -> None:
+    sender = Recorder()
+    notifier = build((300,), sender)
     notifier.check(300)
-    assert [call[3] for call in sender.calls] == [False, True]
+    assert sender.calls[0][3] == 5
 
 
 def test_body_names_the_end_time() -> None:

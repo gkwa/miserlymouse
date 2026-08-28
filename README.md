@@ -147,7 +147,16 @@ ntfy.sh has no sign-up and no notion of owning a topic, so this one is readable 
 
 `--warn` takes any comma-separated list of durations in the grammar above, and `--topic` sends them somewhere else.
 
-The last warning in the list goes out at high priority, so it still arrives through a quiet phone.
+Warnings escalate as the end approaches, so the first one stays out of the way and the last one gets through a quiet phone.
+
+The ladder is anchored on the end of the run rather than on the offsets, which keeps it meaningful for any `--warn` list.
+
+- the last warning goes at priority 5, tagged `rotating_light`
+- the one before it at priority 4, tagged `alarm_clock`
+- the one before that at priority 3, tagged `hourglass_flowing_sand`
+- anything earlier at priority 2, tagged `sleeping`
+
+The ntfy Android app maps custom sounds and vibration patterns to each priority, so the stages can be told apart without looking.
 
 An offset reaching back to or past the start is dropped, since it would fire the moment the run began. Asking for 45 minutes therefore warns at 30 and 5, not at an hour.
 
