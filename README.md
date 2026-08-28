@@ -136,12 +136,14 @@ A push goes out 30 minutes, 15 minutes, and 5 minutes before the assertion drops
 They are pushed to:
 
 ```
-https://ntfy.sh/miserlymouse-sleepwarning
+https://ntfy.sh/miserlymouse
 ```
 
-Subscribe to the topic `miserlymouse-sleepwarning` in the ntfy Android app to get them on your phone.
+Subscribe to the topic `miserlymouse` in the ntfy Android app to get them on your phone.
 
 The ntfy Android app is on [F-Droid](https://f-droid.org/packages/io.heckel.ntfy/) and [Google Play](https://play.google.com/store/apps/details?id=io.heckel.ntfy).
+
+ntfy.sh has no sign-up and no notion of owning a topic, so this one is readable and writable by anyone who guesses the name. Nothing sensitive goes over it, only the time an assertion ends. `--topic` moves the warnings somewhere less obvious.
 
 `--warn` takes any comma-separated list of durations in the grammar above, and `--topic` sends them somewhere else.
 

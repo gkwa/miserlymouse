@@ -7,7 +7,7 @@ import urllib.request
 import miserlymouse.duration
 
 HOST = "https://ntfy.sh"
-DEFAULT_TOPIC = "miserlymouse-sleepwarning"
+DEFAULT_TOPIC = "miserlymouse"
 DEFAULT_WARNINGS: tuple[int, ...] = (1800, 900, 300)
 TIMEOUT = 10
 
