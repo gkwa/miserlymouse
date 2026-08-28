@@ -131,7 +131,7 @@ It appears only when stderr is a terminal and no command is being wrapped, since
 
 ## Warnings
 
-A push goes out 30 minutes, 15 minutes, and 5 minutes before the assertion drops, so the machine never goes quiet on you without notice.
+A push goes out an hour, 30 minutes, and 5 minutes before the assertion drops, so the machine never goes quiet on you without notice.
 
 They are pushed to:
 
@@ -149,7 +149,7 @@ ntfy.sh has no sign-up and no notion of owning a topic, so this one is readable 
 
 The last warning in the list goes out at high priority, so it still arrives through a quiet phone.
 
-An offset reaching back to or past the start is dropped, since it would fire the moment the run began. Asking for 20 minutes therefore warns at 15 and 5, not at 30.
+An offset reaching back to or past the start is dropped, since it would fire the moment the run began. Asking for 45 minutes therefore warns at 30 and 5, not at an hour.
 
 Wrapping a command turns warnings off, because `caffeinate` ignores `-t` when it wraps something and there is no scheduled end to count down to.
 

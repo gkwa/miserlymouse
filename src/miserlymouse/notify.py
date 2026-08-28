@@ -8,7 +8,7 @@ import miserlymouse.duration
 
 HOST = "https://ntfy.sh"
 DEFAULT_TOPIC = "miserlymouse"
-DEFAULT_WARNINGS: tuple[int, ...] = (1800, 900, 300)
+DEFAULT_WARNINGS: tuple[int, ...] = (3600, 1800, 300)
 TIMEOUT = 10
 
 
