@@ -1,17 +1,33 @@
 import argparse
 import importlib.metadata
 
+import miserlymouse.duration
+import miserlymouse.notify
+
 COMMANDS: tuple[str, ...] = ("for", "until")
+
+VALUE_OPTIONS: frozenset[str] = frozenset({"--warn", "--topic"})
 
 FLAG_NAMES: tuple[str, ...] = ("display", "idle", "disk", "system", "user_active")
 
 DURATION_HELP = "2h, 30m, 1h24m, 1.5h, 90s, 1d, 1:24, 1:24:30, or bare seconds"
 TIME_HELP = "3pm, 12.15pm, 12:15pm, 1215pm, 15:00, 1500, noon, or midnight"
 
+WARN_DEFAULT = ",".join(
+    miserlymouse.duration.format_duration(offset)
+    for offset in miserlymouse.notify.DEFAULT_WARNINGS
+)
+
 
 def normalize(argv: list[str]) -> list[str]:
+    """Insert the implicit for, without mistaking an option's value for it."""
+    skip = False
     for index, token in enumerate(argv):
+        if skip:
+            skip = False
+            continue
         if token.startswith("-"):
+            skip = token in VALUE_OPTIONS
             continue
         if token in COMMANDS:
             return argv
@@ -62,6 +78,23 @@ def build_common() -> argparse.ArgumentParser:
         action="store_true",
         default=hidden,
         help="print a JSON record of the schedule to stdout",
+    )
+    common.add_argument(
+        "--warn",
+        metavar="OFFSETS",
+        default=hidden,
+        help=f"push ntfy warnings this long before the end (default: {WARN_DEFAULT})",
+    )
+    common.add_argument(
+        "--topic",
+        default=hidden,
+        help=f"ntfy topic to push to (default: {miserlymouse.notify.DEFAULT_TOPIC})",
+    )
+    common.add_argument(
+        "--no-notify",
+        action="store_true",
+        default=hidden,
+        help="push no ntfy warnings at all",
     )
     common.add_argument(
         "--no-progress",

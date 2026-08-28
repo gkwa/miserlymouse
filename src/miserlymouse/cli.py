@@ -8,6 +8,7 @@ import miserlymouse.clock
 import miserlymouse.duration
 import miserlymouse.logging_setup
 import miserlymouse.metadata
+import miserlymouse.notify
 import miserlymouse.parser
 import miserlymouse.runner
 
@@ -26,6 +27,35 @@ def wants_progress(options: argparse.Namespace, utility: typing.Sequence[str]) -
     if utility:
         return False
     return sys.stderr.isatty()
+
+
+def resolve_warnings(
+    options: argparse.Namespace, utility: typing.Sequence[str], seconds: int
+) -> tuple[int, ...]:
+    """A wrapped command has no scheduled end, so there is nothing to count down."""
+    if getattr(options, "no_notify", False):
+        return ()
+    if utility:
+        return ()
+    requested = getattr(options, "warn", None)
+    if requested is None:
+        warnings = miserlymouse.notify.DEFAULT_WARNINGS
+    else:
+        warnings = miserlymouse.notify.parse_warnings(requested)
+    return miserlymouse.notify.applicable(warnings, seconds)
+
+
+def build_notifier(
+    options: argparse.Namespace,
+    warnings: typing.Sequence[int],
+    seconds: int,
+    now: datetime.datetime,
+) -> miserlymouse.notify.Notifier | None:
+    if not warnings:
+        return None
+    topic = getattr(options, "topic", miserlymouse.notify.DEFAULT_TOPIC)
+    end = now + datetime.timedelta(seconds=seconds)
+    return miserlymouse.notify.Notifier(topic, warnings, end, now)
 
 
 def resolve_seconds(
@@ -61,11 +91,16 @@ def main(argv: typing.Sequence[str] | None = None) -> int:
     }
     command = miserlymouse.runner.build_command(seconds, flags, utility)
 
+    try:
+        warnings = resolve_warnings(options, utility, seconds)
+    except miserlymouse.duration.DurationError as error:
+        parser.error(str(error))
+
     wants_json = getattr(options, "json", False)
     dry_run = getattr(options, "dry_run", False)
     if wants_json:
         record = miserlymouse.metadata.build(
-            options.command, request, seconds, now, command
+            options.command, request, seconds, now, command, warnings
         )
         print(
             miserlymouse.metadata.render(record),
@@ -84,5 +119,8 @@ def main(argv: typing.Sequence[str] | None = None) -> int:
         return 1
 
     return miserlymouse.runner.supervise(
-        command, seconds, wants_progress(options, utility)
+        command,
+        seconds,
+        wants_progress(options, utility),
+        warner=build_notifier(options, warnings, seconds, now),
     )

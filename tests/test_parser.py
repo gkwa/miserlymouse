@@ -16,6 +16,10 @@ import miserlymouse.parser
         (["until", "3pm"], ["until", "3pm"]),
         (["--dry-run", "until", "3pm"], ["--dry-run", "until", "3pm"]),
         (["--version"], ["--version"]),
+        (["--warn", "5m", "2h"], ["--warn", "5m", "for", "2h"]),
+        (["--topic", "mine", "2h"], ["--topic", "mine", "for", "2h"]),
+        (["--warn=5m", "2h"], ["--warn=5m", "for", "2h"]),
+        (["--warn", "5m", "until", "3pm"], ["--warn", "5m", "until", "3pm"]),
         ([], []),
     ],
 )

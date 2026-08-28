@@ -20,6 +20,12 @@ ASSERTIONS: tuple[tuple[str, str], ...] = (
 )
 
 
+class Warner(typing.Protocol):
+    """Whatever wants telling how many seconds of assertion are left."""
+
+    def check(self, remaining: int) -> None: ...
+
+
 def build_command(
     seconds: int,
     flags: typing.Mapping[str, bool],
@@ -50,13 +56,14 @@ def supervise(
     seconds: int,
     show_progress: bool,
     stream: typing.TextIO | None = None,
+    warner: Warner | None = None,
 ) -> int:
     target = stream if stream is not None else sys.stderr
     logging.debug("spawn %s", " ".join(command))
     process = subprocess.Popen(list(command))
     started = time.monotonic()
     try:
-        wait(process, seconds, started, show_progress, target)
+        wait(process, seconds, started, show_progress, target, warner)
     except KeyboardInterrupt:
         stop(process)
         erase(target, show_progress)
@@ -71,14 +78,18 @@ def wait(
     started: float,
     show_progress: bool,
     stream: typing.TextIO,
+    warner: Warner | None = None,
 ) -> None:
     while True:
         try:
             process.wait(timeout=miserlymouse.progress.INTERVAL)
             return
         except subprocess.TimeoutExpired:
+            elapsed = time.monotonic() - started
+            if warner is not None:
+                warner.check(max(seconds - int(elapsed), 0))
             if show_progress:
-                draw(stream, seconds, time.monotonic() - started)
+                draw(stream, seconds, elapsed)
 
 
 def draw(stream: typing.TextIO, seconds: int, elapsed: float) -> None:

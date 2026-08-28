@@ -10,6 +10,8 @@ Ctrl-C stops caffeinate and exits 130, leaving nothing running.
 
 Apart from the progress bar, which erases itself, it prints nothing on the happy path.
 
+Pushes an ntfy warning to your phone as the end of the assertion approaches.
+
 ## Modes
 
 `for` takes a duration. A bare duration with no subcommand means `for`.
@@ -85,6 +87,15 @@ uv tool run --from git+https://github.com/gkwa/miserlymouse miserlymouse 30m mak
 # stay awake for two hours with no progress bar
 uv tool run --from git+https://github.com/gkwa/miserlymouse miserlymouse --no-progress 2h
 
+# warn at different offsets before the end
+uv tool run --from git+https://github.com/gkwa/miserlymouse miserlymouse --warn 1h,10m 4h
+
+# push the warnings to a topic of your own
+uv tool run --from git+https://github.com/gkwa/miserlymouse miserlymouse --topic my-topic 2h
+
+# stay awake with no warnings at all
+uv tool run --from git+https://github.com/gkwa/miserlymouse miserlymouse --no-notify 2h
+
 # print the caffeinate command without running it
 uv tool run --from git+https://github.com/gkwa/miserlymouse miserlymouse --dry-run 1h24m
 
@@ -118,6 +129,32 @@ It appears only when stderr is a terminal and no command is being wrapped, since
 
 `--no-progress` turns it off outright.
 
+## Warnings
+
+A push goes out 30 minutes, 15 minutes, and 5 minutes before the assertion drops, so the machine never goes quiet on you without notice.
+
+They are pushed to:
+
+```
+https://ntfy.sh/miserlymouse-sleepwarning
+```
+
+Subscribe to the topic `miserlymouse-sleepwarning` in the ntfy Android app to get them on your phone.
+
+The ntfy Android app is on [F-Droid](https://f-droid.org/packages/io.heckel.ntfy/) and [Google Play](https://play.google.com/store/apps/details?id=io.heckel.ntfy).
+
+`--warn` takes any comma-separated list of durations in the grammar above, and `--topic` sends them somewhere else.
+
+The last warning in the list goes out at high priority, so it still arrives through a quiet phone.
+
+An offset reaching back to or past the start is dropped, since it would fire the moment the run began. Asking for 20 minutes therefore warns at 15 and 5, not at 30.
+
+Wrapping a command turns warnings off, because `caffeinate` ignores `-t` when it wraps something and there is no scheduled end to count down to.
+
+`--no-notify` turns them off outright.
+
+A push that fails is logged and abandoned, never retried, and never allowed to take the assertion down with it.
+
 ## JSON record
 
 `--json` writes the schedule before caffeinate takes over.
@@ -130,3 +167,4 @@ It goes to stdout, except when a command is being wrapped, where it moves to std
 - `duration` is that same span written back out in the duration grammar
 - `start` and `end` are local ISO 8601, and `end` is exactly the moment the assertion drops
 - `command` is the caffeinate argv
+- `warnings` lists each push that is scheduled, by `offset` before the end and the local ISO 8601 `at` it fires

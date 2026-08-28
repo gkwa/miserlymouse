@@ -11,6 +11,7 @@ def build(
     seconds: int,
     start: datetime.datetime,
     command: typing.Sequence[str],
+    warnings: typing.Sequence[int] = (),
 ) -> dict[str, typing.Any]:
     end = start + datetime.timedelta(seconds=seconds)
     return {
@@ -22,6 +23,14 @@ def build(
         "end": end.isoformat(timespec="seconds"),
         "timezone": start.tzname(),
         "command": list(command),
+        "warnings": [warning(end, offset) for offset in warnings],
+    }
+
+
+def warning(end: datetime.datetime, offset: int) -> dict[str, typing.Any]:
+    return {
+        "offset": miserlymouse.duration.format_duration(offset),
+        "at": (end - datetime.timedelta(seconds=offset)).isoformat(timespec="seconds"),
     }
 
 
